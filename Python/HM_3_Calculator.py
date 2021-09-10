@@ -1,0 +1,10 @@
+x = int(input('Enter the first number: '))
+y = int(input('Enter the second number: '))
+addition = x + y
+substraction = x - y
+multiplication = x * y
+division = x / y
+print(x,'+',y,'=',addition)
+print(x,'-',y,'=',substraction)
+print(x,'*',y,'=',multiplication)
+print(x,'/',y,'=',division)
