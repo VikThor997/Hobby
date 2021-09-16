@@ -36,8 +36,15 @@ cv2.setMouseCallback('my WEBcam',mouseClick) # volanie funkcie na pracu s mysou
 while True:
     ignore,  frame = cam.read() # ulozenie snimku do premennej
     frameROI = frame[MouseLeftDown_Y:MouseLeftUP_Y,MouseLeftDown_X: MouseLeftUP_X] # vytvorenie ROI pomocou suradnic z klikov mysi
+    WidthROI = abs(MouseLeftUP_X - MouseLeftDown_X)
+    HeightROI = abs(MouseLeftDown_Y - MouseLeftUP_Y)
+    ROIboxCR = int(HeightROI/2)
+    ROIboxCC = int(WidthROI/2)
+    ROIdeltaRow = 1
+    ROIDeltaColumn = 1
+    
     if (evt == 4): # pod uvolneni laveho tlacidla bude splnena tato podmienka
-        ROImsg = str('my ROI') # nazov okna ROI
+        ROImsg = str('my ROI') # nazov okna ROIq
         cv2.imshow(ROImsg, frameROI) # zobrazenie okna ROI
         cv2.moveWindow(ROImsg,width,0) # posunutie na poziciu
     if(evt == 2): # stlacenie praveho tlacidla vypne kameru
