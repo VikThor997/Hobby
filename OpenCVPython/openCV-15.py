@@ -32,6 +32,7 @@ def onTrack6(value):
     valHigh = value
     print('valHigh is: ',valHigh)
 
+
 width=640
 height=360
 cam=cv2.VideoCapture(0,cv2.CAP_DSHOW)
@@ -61,10 +62,16 @@ while True:
     lowerBound = np.array([hueLow,SatLow,valLow])
     upperBound = np.array([hueHigh,SatHigh,valHigh])
 
+    
+    
+
     myMask = cv2.inRange(frameHSV,lowerb = lowerBound,upperb = upperBound)
+    
+
     myMaskSmall = cv2.resize(myMask,(int(width/2),int(height/2)))
     cv2.imshow('My Mask',myMaskSmall)
     cv2.moveWindow('My Mask',0,height)
+
 
     myObject = cv2.bitwise_and(frame,frame, mask = myMask)
     myObjectSmall = cv2.resize(myObject,(int(width/2),int(height/2)))
