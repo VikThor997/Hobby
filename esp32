@@ -1,0 +1,117 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
+
+#define WIFI_NETWORK "HH40V_4819"
+#define WIFI_PASSWORD "henadona"
+#define WIFI_TIMEOUT_MS 20000
+
+#define DHTPIN 21
+#define DHTTYPE DHT11
+
+#define ledPinRed 23
+#define ledPinGreen 22
+#define buttonDisconnectPin 19
+#define buttonConnectPin 18
+
+DHT dht(DHTPIN, DHTTYPE);
+
+WiFiUDP udp;
+
+IPAddress staticIP_ESP32(192, 168, 1, 50);  // Static IP address to be used by the ESP32 device
+IPAddress serverAdress(192, 168, 1, 169);
+IPAddress gateway(192, 168, 1, 1);    // Gateway IP address
+IPAddress subnet(255, 255, 255, 0);   // Subnet mask
+
+unsigned int remotePort = 2222;
+
+unsigned long previousTime = 0;
+int interval = 1000;
+int disconnectButState;
+int disconnectButStateOld = 0;
+
+char tempString[5];
+signed int num_width = 5;
+unsigned int num_decimal = 5;
+
+void connectToWifi(){
+  Serial.print("Connecting to Wifi. ");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_NETWORK, WIFI_PASSWORD);
+
+  unsigned long startAttempTime = millis();
+
+  while(WiFi.status() != WL_CONNECTED && millis() - startAttempTime < WIFI_TIMEOUT_MS){
+
+    unsigned long currentTime = millis();   // get the current time in milliseconds
+
+    if (currentTime - previousTime >= interval) {   // check if the interval has elapsed
+      previousTime = currentTime;    // update the previous time
+      digitalWrite(ledPinRed, !digitalRead(ledPinRed));   // toggle the LED
+      Serial.print(".");
+    }
+  }
+  if(WiFi.status() != WL_CONNECTED){
+      Serial.println("Failed");
+      digitalWrite(ledPinRed, HIGH);
+      digitalWrite(ledPinGreen, LOW);
+  }else{
+      Serial.print("Connected!");
+      WiFi.config(staticIP_ESP32, gateway, subnet);
+      Serial.println(WiFi.localIP());
+      digitalWrite(ledPinRed, LOW);
+      digitalWrite(ledPinGreen, HIGH);
+  }
+}
+
+void setup(){
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  pinMode(ledPinRed, OUTPUT);
+  pinMode(ledPinGreen, OUTPUT);
+  pinMode(buttonDisconnectPin, INPUT_PULLUP);
+  dht.begin();
+  connectToWifi();
+  WiFi.begin(WIFI_NETWORK, WIFI_PASSWORD);
+
+  //Init UDP library
+  if (udp.begin(1234) == 0) {
+    Serial.println("Failed to initialize UDP library");
+    while(1);
+  }
+}
+
+void loop() {
+  disconnectButState = !digitalRead(buttonDisconnectPin);
+
+  if (disconnectButState == 1 && disconnectButStateOld == 0){
+      WiFi.disconnect();
+      digitalWrite(ledPinRed, HIGH);
+      digitalWrite(ledPinGreen, LOW);
+      Serial.println("Disconnected. ");
+      disconnectButStateOld = disconnectButState;
+  }
+
+  float tempFloat = dht.readTemperature();
+  float humFloat = dht.readHumidity();
+
+  Serial.print(tempFloat);
+  if(isnan(tempFloat) || isnan(humFloat)){
+      Serial.println("Error in reading from DHT11.");
+      delay(500);
+      return;
+  }
+
+  dtostrf(tempFloat, num_width, num_decimal,tempString);
+
+  char  buffer[] = "Hello From ESP32"; 
+  udp.beginPacket(serverAdress, remotePort);
+  udp.print(buffer);
+  udp.endPacket();
+  Serial.println("Message sent");
+  delay(1000);
+} 
